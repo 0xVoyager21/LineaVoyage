@@ -44,9 +44,9 @@ def main():
         send_list.append(f'{account.id}/{count_wallets} : [{account.address}]({"https://debank.com/profile/" + account.address})')
 
         try:
-            # send_list.append(Okex(account.id, account.private_key, account.proxy, from_chain).withdraw_from_okex())
+            send_list.append(Okex(account.id, account.private_key, account.proxy, from_chain).withdraw_from_okex())
 
-            # send_list.append(OrbiterBridge(account.id, account.private_key, account.proxy, from_chain).main(from_chain=from_chain, to_chain=to_chain))
+            send_list.append(OrbiterBridge(account.id, account.private_key, account.proxy, from_chain).main(from_chain=from_chain, to_chain=to_chain))
 
             if addressokx != None:
                 send_list.append(Okex(account.id, account.private_key, account.proxy, to_chain).deposit_to_okex(addressokx))
