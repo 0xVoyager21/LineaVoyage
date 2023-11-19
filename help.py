@@ -8,6 +8,7 @@ import random
 import requests
 
 from settings import RETRY_COUNT, gas_api, delay_wallets, delay_transactions, waiting_gas
+from vars import EIP1559_CHAINS
 
 
 send_list = []
@@ -120,27 +121,46 @@ def get_gas_data(network):
     
 def get_tx_data_withABI(self, value=0):
     max_fee_per_gas, max_priority_fee = get_gas_data(self.network)
-    tx_data = {
-        "from": self.address,
-        'maxFeePerGas': self.w3.to_wei(max_fee_per_gas, "gwei"),
-        'maxPriorityFeePerGas': self.w3.to_wei(max_priority_fee, "gwei"),
-        "nonce": self.w3.eth.get_transaction_count(self.address),
-        "value": value,
-    }
+    if (self.network in EIP1559_CHAINS):
+        tx_data = {
+            "from": self.address,
+            'maxFeePerGas': self.w3.to_wei(max_fee_per_gas, "gwei"),
+            'maxPriorityFeePerGas': self.w3.to_wei(max_priority_fee, "gwei"),
+            "nonce": self.w3.eth.get_transaction_count(self.address),
+            "value": value,
+        }
+    else: 
+        tx_data = {
+            "from": self.address,
+            "gasPrice": int(self.w3.eth.gas_price * 1.08),
+            "nonce": self.w3.eth.get_transaction_count(self.address),
+            "value": value,
+        }
     return tx_data
 
 def get_tx_data(self, to, value=0, data=None):
-    max_fee_per_gas, max_priority_fee = get_gas_data(self.network)
-    tx_data = {
-        "chainId": self.w3.eth.chain_id,
-        "from": self.address,
-        "to": self.w3.to_checksum_address(to),
-        'maxFeePerGas': self.w3.to_wei(max_fee_per_gas, "gwei"),
-        'maxPriorityFeePerGas': self.w3.to_wei(max_priority_fee, "gwei"),
-        "nonce": self.w3.eth.get_transaction_count(self.address),
-        "value": value,
-        "gas": 0,
-    }
+    if (self.network in EIP1559_CHAINS):
+        max_fee_per_gas, max_priority_fee = get_gas_data(self.network)
+        tx_data = {
+            "chainId": self.w3.eth.chain_id,
+            "from": self.address,
+            "to": self.w3.to_checksum_address(to),
+            'maxFeePerGas': self.w3.to_wei(max_fee_per_gas, "gwei"),
+            'maxPriorityFeePerGas': self.w3.to_wei(max_priority_fee, "gwei"),
+            "nonce": self.w3.eth.get_transaction_count(self.address),
+            "value": value,
+            "gas": 0,
+        }
+    else: 
+        tx_data = {
+            "chainId": self.w3.eth.chain_id,
+            "from": self.address,
+            "to": self.w3.to_checksum_address(to),
+            "gasPrice": int(self.w3.eth.gas_price * 1.08),
+            "nonce": self.w3.eth.get_transaction_count(self.address),
+            "value": value,
+            "gas": 0,
+        }
     if data != None:
         tx_data["data"] = data
 
@@ -148,9 +168,7 @@ def get_tx_data(self, to, value=0, data=None):
 
 def sign_and_send_transaction(self, transaction):
     gas = int(self.w3.eth.estimate_gas(transaction) * 1.2)
-
     transaction.update({"gas": gas})
-
     signed_txn = self.w3.eth.account.sign_transaction(transaction, self.private_key)
 
     tx_hash = self.w3.eth.send_raw_transaction(signed_txn.rawTransaction)
@@ -162,3 +180,4 @@ def sign_and_send_transaction(self, transaction):
     tx_hash = self.w3.to_hex(tx_hash)
 
     return txstatus, tx_hash
+

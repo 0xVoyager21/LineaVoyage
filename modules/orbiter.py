@@ -8,7 +8,7 @@ from settings import decimal_places, stay_eth
 
 chains = {
     "Optimism": ["0xe4edb277e41dc89ab076a1f049f4a3efa700bce8", "9007"],
-    "Arbitrum": ["0xD9D74a29307cc6Fc8BF424ee4217f1A587FBc8Dc", "9002"],
+    "Arbitrum": ["0xE4eDb277e41dc89aB076a1F049f4a3EfA700bCE8", "9002"],
     "zkSync": ["0xE4eDb277e41dc89aB076a1F049f4a3EfA700bCE8", "9014"],
     "Scroll": ["0xe4edb277e41dc89ab076a1f049f4a3efa700bce8", "9019"],
     "Linea": ["0xe4edb277e41dc89ab076a1f049f4a3efa700bce8", "9023"],
@@ -17,8 +17,8 @@ chains = {
 
 class OrbiterBridge(Account):
     send_list = ''
-    def __init__(self, id, private_key, proxy, rpc):
-        super().__init__(id=id, private_key=private_key, proxy=proxy, rpc=rpc)
+    def __init__(self, id, private_key, proxy, network):
+        super().__init__(id=id, private_key=private_key, proxy=proxy, network=network)
         send_list = ''
         self.send_list = send_list
 
@@ -33,7 +33,6 @@ class OrbiterBridge(Account):
 
         value_str = str(value_in_wei)[:-4]
         transaction = get_tx_data(self, chains[from_chain][0], value=int(value_str + str(chains[to_chain][1])))
-
         logger.info(f'Orbiter: Bridge {"{:0.9f}".format(value_in_eth)} ETH from {from_chain} to {to_chain}...')
         txstatus, tx_hash = sign_and_send_transaction(self, transaction)
         if txstatus == 1:

@@ -32,6 +32,9 @@ proxies = {
 class Okex(Account):
     def __init__(self, id, private_key, proxy, network):
         super().__init__(id=id, private_key=private_key, proxy=proxy, network=network)
+    
+        if self.network == "Arbitrum":
+            self.network = "Arbitrum One"
 
     @check_gas
     @retry
@@ -42,15 +45,15 @@ class Okex(Account):
 
         transaction = get_tx_data(self, self.w3.to_checksum_address(addressokx), value=value_in_wei)
 
-        logger.info(f'OKx: Deposit {"{:0.9f}".format(value_in_eth)} ETH from {self.rpc}...')
+        logger.info(f'OKx: Deposit {"{:0.9f}".format(value_in_eth)} ETH from {self.network}...')
         txstatus, tx_hash = sign_and_send_transaction(self, transaction)
 
         if txstatus == 1:
-            logger.success(f'OKx: Deposit {"{:0.9f}".format(value_in_eth)} ETH from {self.rpc} : {self.scan + tx_hash}')
-            return (f'\n{SUCCESS}OKx: Deposit {"{:0.4f}".format(value_in_eth)} ETH from {self.rpc} - [tx hash]({self.scan + tx_hash})')
+            logger.success(f'OKx: Deposit {"{:0.9f}".format(value_in_eth)} ETH from {self.network} : {self.scan + tx_hash}')
+            return (f'\n{SUCCESS}OKx: Deposit {"{:0.4f}".format(value_in_eth)} ETH from {self.network} - [tx hash]({self.scan + tx_hash})')
         else:
-            logger.error(f'OKx: Deposit {"{:0.9f}".format(value_in_eth)} ETH from {self.rpc} : {self.scan + tx_hash}')
-            return (f'\n{FAILED}OKx: Deposit {"{:0.4f}".format(value_in_eth)} ETH from {self.rpc} - failed')
+            logger.error(f'OKx: Deposit {"{:0.9f}".format(value_in_eth)} ETH from {self.network} : {self.scan + tx_hash}')
+            return (f'\n{FAILED}OKx: Deposit {"{:0.4f}".format(value_in_eth)} ETH from {self.network} - failed')
 
     def withdraw_from_okex(self):
 
@@ -61,7 +64,11 @@ class Okex(Account):
         amount_to_withdrawal = round(random.uniform(amount[0], amount[1]), decimal_places)
         choose_cex(self.address, amount_to_withdrawal, 1, self.network)
         time.sleep(random.randint(delay[0], delay[1]))
-        self.wait_balance(int(self.w3.to_wei(amount_to_withdrawal, 'ether') * 0.8), rpc=self.rpc)
+        if self.network == "Arbitrum One":
+            network = "Arbitrum"
+        else: 
+            network = self.network
+        self.wait_balance(int(self.w3.to_wei(amount_to_withdrawal, 'ether') * 0.8), network=network)
         sleeping_between_transactions()
         return (f'\n{SUCCESS}OKx: Withdraw {"{:0.4f}".format(amount_to_withdrawal)} ETH')
 
@@ -74,7 +81,7 @@ class Okex(Account):
             'enableRateLimit': True,
             'proxies': proxies,
         })
-
+        print(exchange)
         list_sub = exchange.private_get_users_subaccount_list()
         for sub_data in list_sub['data']:
             name_sub = sub_data['subAcct']
@@ -97,7 +104,7 @@ def okx_withdraw(address, amount_to_withdrawal, wallet_number, network):
         'enableRateLimit': True,
         'proxies': proxies,
     })
-
+    logger.success(symbolWithdraw)
     try:
         chainName = symbolWithdraw + "-" + network
         fee = get_withdrawal_fee(symbolWithdraw, chainName)
